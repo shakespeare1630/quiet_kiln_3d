@@ -63,6 +63,20 @@ _CRAFT = """## How to build it
   InstancedMesh for many repeats.
 - Write -(x ** 2), never -x ** 2. Fully deterministic code: derive variation from indices with sin/cos hashes."""
 
+_CRAFT_RICH = _CRAFT.replace(
+    """- Be thorough: a good module is usually 6,000 to 9,000 tokens of code, spent on what the photo shows. Use helper
+  functions and loops for repeated parts so the length goes into detail, not repetition.""",
+    """- Be thorough and detailed: a strong module is usually 10,000 to 14,000 tokens of code, spent on what the photo
+  shows. Judges penalize simplified models, so after the main shapes add the fine detail a close look reveals: small
+  parts (screws, rivets, buttons, hinges, stitching, piping), edges and seams, panel lines, surface relief, rims and
+  bevels, and texture on printed or natural surfaces. Use enough segments that curves look smooth (48 to 96 around,
+  more on large curved parts). Use helper functions and loops for repeated parts so the length goes into detail.""",
+).replace(
+    "- Keep it fast: under about 60,000 vertices, 120 meshes and 5,000 instances.",
+    "- Stay within the limits: under about 150,000 vertices, 180 meshes and 20,000 instances.",
+)
+assert _CRAFT_RICH != _CRAFT and _CRAFT_RICH.count("150,000") == 1
+
 GENERATE = "\n\n".join(
     [
         "You are an expert procedural 3D modeler. Rebuild the object in the reference photo as a complete, "
@@ -72,6 +86,9 @@ GENERATE = "\n\n".join(
         _CRAFT,
     ]
 )
+
+GENERATE_RICH = GENERATE.replace(_CRAFT, _CRAFT_RICH)
+assert GENERATE_RICH != GENERATE
 
 DRAFT_STARTS = {
     "plain": "Write the complete Three.js module for the object in the reference photo. Return only the module.",
@@ -134,6 +151,15 @@ Current module:
 ```javascript
 {source}
 ```"""
+
+REWRITE_RICH = REWRITE.replace(
+    "Keep everything that already matches; do not simplify, drop correct detail or start over. Make each change large\n"
+    "enough to see in the renders.",
+    "Keep everything that already matches; do not simplify, drop correct detail or start over. Make each change large\n"
+    "enough to see in the renders. Then add finer detail the photo shows that the module still lacks (small parts,\n"
+    "edges, seams, surface relief, texture): a simplified model loses to a detailed one.",
+)
+assert REWRITE_RICH != REWRITE
 
 REWRITE_VIEWPOINT = REWRITE.replace(
     "Fix a wrong pose by\n   turning the whole object in code.",

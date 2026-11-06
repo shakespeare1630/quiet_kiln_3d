@@ -105,6 +105,7 @@ class FunnelPlan:
     critique: bool = False  # the selector also lists fixes; the next rewrite of a survivor receives them
     palette: bool = False  # measured photo colours in every prompt; rewrites also get the current module's colours
     checkpoints: tuple[int, ...] = ()  # rounds whose champions re-compete with the last one in a final guard selection
+    rich: bool = False  # ask for richer, more detailed modules (10-14k tokens, finer parts) in drafts and rewrites
 
 
 DEFAULT_PLAN = FunnelPlan()
@@ -176,6 +177,9 @@ LITE12_PLAN = FunnelPlan(drafts=FunnelPlan().drafts * 2, rounds=LITE_PLAN.rounds
 LITE_ASTRA_PLAN = FunnelPlan(
     drafts=FunnelPlan().drafts + (("plain", ASTRA, "high"), ("inventory", ASTRA, "high")), rounds=LITE_PLAN.rounds
 )
+# lite-rich: lite plan with richer instructions (10-14k-token modules, fine detail, up to ~150k vertices). "Simplified /
+# less detailed" was the issue most specific to our losses, and edge detail correlated +0.29 with duel wins.
+LITE_RICH_PLAN = FunnelPlan(rounds=LITE_PLAN.rounds, rich=True)
 # twin4: twin with 4 drafts per lineage so both independent lineages (each seeded from its own top draft) finish all
 # lite rounds under the per-lineage cap. Shared-draft twin showed the top-ranked draft drives the final (+1.80 per
 # 4 duels for the lineage seeded with ranks 1,3 vs +0.70 for ranks 2,4), and separate pools keep finals diverse
@@ -219,7 +223,8 @@ PLANS = {
     "funnel-twin4": TWIN4_PLAN,  # TwinPipeline, 4 drafts per lineage
     "funnel-lite12": LITE12_PLAN,
     "funnel-seq-twin": LITE_PLAN,  # SequentialTwinPipeline over lite
-    "funnel-lite-astra": LITE_ASTRA_PLAN,  # TwinPipeline over two lite lineages (see TwinPipeline)
+    "funnel-lite-astra": LITE_ASTRA_PLAN,
+    "funnel-lite-rich": LITE_RICH_PLAN,  # TwinPipeline over two lite lineages (see TwinPipeline)
 }
 
 
@@ -383,6 +388,8 @@ class FunnelPipeline:
         self.trace: list[dict] = []
         self.generate_text = P.GENERATE_VIEWPOINT if plan.viewpoint else P.GENERATE
         self.rewrite_text = P.REWRITE_VIEWPOINT if plan.viewpoint else P.REWRITE
+        if plan.rich:
+            self.generate_text, self.rewrite_text = P.GENERATE_RICH, P.REWRITE_RICH
 
     def describe(self) -> dict:
         return {
@@ -416,11 +423,11 @@ class FunnelPipeline:
                     raise
             except openai.RateLimitError:
                 raise  # leave the prompt for a later pass; saved calls are reused
-            except openai.APIStatusError as error:
-                # A recorded provider failure: it counts as a call and is never retried under the same ID.
-                LOG.warning("request=%d provider error %s", spec.request_id, error.status_code)
-                self.budget.settle(spec.request_id, spec.model, {"input_tokens": 0, "output_tokens": 0})
-                return None
+            except openai.APIStatusError:
+                # A non-200 provider response is a *failed* witness call. Offline replay serves only successful
+                # captures ("Saved successful response is missing"), so continuing without it would make this prompt
+                # unreplayable. Propagate: the runner's next pass retries; at worst the prompt is lost, not invalid.
+                raise
             except openai.APIConnectionError:
                 raise  # transport failure: the runner's later pass recovers the saved exchange
             except openai.APIError as error:
