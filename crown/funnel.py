@@ -423,19 +423,12 @@ class FunnelPipeline:
                     raise
             except openai.RateLimitError:
                 raise  # leave the prompt for a later pass; saved calls are reused
-            except openai.APIStatusError:
-                # A non-200 provider response is a *failed* witness call. Offline replay serves only successful
-                # captures ("Saved successful response is missing"), so continuing without it would make this prompt
-                # unreplayable. Propagate: the runner's next pass retries; at worst the prompt is lost, not invalid.
+            except openai.APIError:
+                # Any other model-call failure (provider HTTP error, SSE error event / unusable response, delivery
+                # failure) is a durably failed attempt: offline replay serves only successful responses and "does not
+                # reproduce failed attempts" (witness-gateway PODS.md). Never continue without it; propagate so the
+                # runner's next pass retries the same request ID (a failed attempt permits that retry).
                 raise
-            except openai.APIConnectionError:
-                raise  # transport failure: the runner's later pass recovers the saved exchange
-            except openai.APIError as error:
-                # An error event inside a delivered stream (e.g. "servers are currently overloaded"): the exchange is
-                # recorded as failed, so a later pass would see the same failure. Drop this one candidate instead.
-                LOG.warning("request=%d provider stream error: %s", spec.request_id, str(error)[:120])
-                self.budget.settle(spec.request_id, spec.model, {"input_tokens": 0, "output_tokens": 0})
-                return None
         usage = getattr(response, "usage", None)
         if hasattr(usage, "model_dump"):
             usage = usage.model_dump()
