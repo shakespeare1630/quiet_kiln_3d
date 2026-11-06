@@ -1,0 +1,4 @@
+{
+  "witness_url": "https://witness.subnet404.xyz",
+  "proof_parameters": "/absolute/path/to/matching-sdk/witness-server/verifier/params"
+}

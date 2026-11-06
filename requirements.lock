@@ -1,0 +1,32 @@
+404-miner-runtime @ https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_miner_runtime-0.1.5-py3-none-any.whl#sha256=db3f70f71b25f57bd06030bb637ee2e643b3a60849d541074d9da7e15ddc6f0c
+404-renderer-client @ https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_renderer_client-0.1.4-py3-none-any.whl#sha256=35b1b77efe479a18713a0d817bd60749089cc7d0725c1738edbbcd8caccaa4fa
+404-witness-client @ https://github.com/404-Repo/404-gen-subnet/releases/download/miner-runtime-v0.1.5/404_witness_client-0.2.17-py3-none-manylinux_2_34_x86_64.whl#sha256=70a7fda820edaa90d109817ac671487a3ac6a053ae0bb9b17991fe858671adfd
+aiofiles==25.1.0
+annotated-types==0.8.0
+anyio==4.16.0
+bittensor-wallet==4.1.1
+certifi==2026.10.23
+cffi==2.1.1
+cryptography==50.0.2
+ecdsa==0.19.2
+h11==0.16.0
+httpcore==1.0.9
+httpcore2==2.16.0
+httpx==0.28.1
+httpx2==2.16.0
+idna==3.20
+jiter==0.18.0
+loguru==0.7.3
+openai==3.45.0
+pillow==13.0.0
+pycparser==3.12
+pydantic==2.14.2
+pydantic-core==2.50.2
+six==1.17.0
+sniffio==1.3.1
+tlslite-ng==0.8.2
+truststore==0.10.5
+typing-extensions==4.16.0
+typing-inspection==0.4.5
+websockets==17.4
+numpy==2.5.4
